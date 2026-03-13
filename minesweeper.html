@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>扫雷游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            transition: padding 0.3s ease;
+        }
+
+        body.fullscreen {
+            padding: 0;
+            justify-content: center;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        body.fullscreen .game-container {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            justify-content: center;
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(90deg, #e94560, #f39c12);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            flex-shrink: 0;
+        }
+
+        body.fullscreen h1 {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            align-items: center;
+        }
+
+        body.fullscreen .controls {
+            display: none;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-group label {
+            color: #fff;
+            font-size: 0.85rem;
+        }
+
+        select, button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        button {
+            background: linear-gradient(135deg, #e94560, #f39c12);
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.6);
+        }
+
+        .fullscreen-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        /* 音效控制按钮 */
+        .sound-btn {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            min-width: 36px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .sound-btn.muted {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        .sound-btn .icon {
+            font-size: 0.9rem;
+        }
+
+        /* 风格选择器 */
+        .style-select {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: #fff;
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            min-width: 70px;
+        }
+
+        .style-select option {
+            background: #1a1a2e;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 10px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        body.fullscreen .stats {
+            display: none;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.7rem;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .stat-value.mines {
+            color: #ffd700;
+        }
+
+        .stat-value.time {
+            color: #f39c12;
+        }
+
+        .board-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 8px;
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+        }
+
+        body.fullscreen .board-wrapper {
+            background: transparent;
+            border-radius: 0;
+            padding: 10px;
+        }
+
+        .board {
+            display: grid;
+            gap: 1px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background 0.1s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
+        }
+
+        .cell.hidden {
+            background: linear-gradient(145deg, #3a3a5c, #2a2a4c);
+            box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.1),
+                        inset -1px -1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell.hidden:hover {
+            background: linear-gradient(145deg, #4a4a6c, #3a3a5c);
+        }
+
+        .cell.revealed {
+            background: rgba(255, 255, 255, 0.08);
+            cursor: default;
+        }
+
+        .cell.flagged {
+            background: linear-gradient(145deg, #ffd700, #ffb700);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+        }
+
+        .cell.flagged .flag {
+            color: #1a1a2e;
+        }
+
+        .cell.question {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.4);
+        }
+
+        .cell.question .question-mark {
+            color: #fff;
+        }
+
+        .cell.mine {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            animation: explode 0.3s ease;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .cell .flag,
+        .cell .mine-icon,
+        .cell .question-mark {
+            font-size: 1em;
+            pointer-events: none;
+        }
+
+        .cell[data-number="1"] { color: #3498db; }
+        .cell[data-number="2"] { color: #27ae60; }
+        .cell[data-number="3"] { color: #e74c3c; }
+        .cell[data-number="4"] { color: #9b59b6; }
+        .cell[data-number="5"] { color: #e67e22; }
+        .cell[data-number="6"] { color: #1abc9c; }
+        .cell[data-number="7"] { color: #34495e; }
+        .cell[data-number="8"] { color: #95a5a6; }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            text-align: center;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: messageIn 0.3s ease;
+        }
+
+        @keyframes messageIn {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .message.win {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message.lose {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message .emoji {
+            font-size: 2rem;
+        }
+
+        .message .text {
+            font-size: 1.1rem;
+        }
+
+        .message .stats-info {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .message button {
+            margin-top: 10px;
+            padding: 8px 20px;
+        }
+
+        .instructions {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.75rem;
+            text-align: center;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        body.fullscreen .instructions {
+            display: none;
+        }
+
+        /* 全屏模式悬浮UI */
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 15px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            z-index: 50;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        body.fullscreen .fullscreen-overlay {
+            display: flex;
+        }
+
+        .fullscreen-overlay:hover,
+        .fullscreen-overlay:active {
+            opacity: 1;
+        }
+
+        .fullscreen-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .fullscreen-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .fullscreen-stat .icon {
+            font-size: 1rem;
+        }
+
+        .fullscreen-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .fullscreen-actions button {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+        }
+
+        .exit-fullscreen-btn {
+            background: linear-gradient(135deg, #e94560, #f39c12);
+        }
+
+        .new-game-btn-fs {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+        }
+
+        /* 响应式设计 */
+        @media (min-width: 800px) {
+            .cell { width: 36px; height: 36px; font-size: 1rem; }
+            h1 { font-size: 2rem; }
+            .game-container { padding: 20px; }
+        }
+
+        @media (max-width: 799px) and (min-width: 500px) {
+            .cell { width: 30px; height: 30px; font-size: 0.85rem; }
+            h1 { font-size: 1.6rem; }
+        }
+
+        @media (max-width: 499px) {
+            body { padding: 5px; }
+            .game-container { padding: 10px; border-radius: 12px; }
+            h1 { font-size: 1.4rem; margin-bottom: 8px; }
+            .controls { gap: 4px; }
+            select, button { padding: 6px 8px; font-size: 0.75rem; }
+            .control-group label { font-size: 0.7rem; }
+            .stats { gap: 20px; padding: 8px 15px; }
+            .stat-value { font-size: 1rem; }
+            .stat-label { font-size: 0.65rem; }
+            .cell { width: 28px; height: 28px; font-size: 0.75rem; }
+            .instructions { font-size: 0.6rem; gap: 6px; padding: 6px 10px; }
+            .style-select { min-width: 60px; font-size: 0.7rem; }
+        }
+
+        @media (max-width: 350px) {
+            .cell { width: 24px; height: 24px; font-size: 0.7rem; }
+            h1 { font-size: 1.2rem; }
+            .controls { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 全屏模式悬浮UI -->
+    <div class="fullscreen-overlay" id="fullscreenOverlay">
+        <div class="fullscreen-stats">
+            <div class="fullscreen-stat">
+                <span class="icon">💣</span>
+                <span id="fsMineCount">10</span>
+            </div>
+            <div class="fullscreen-stat">
+                <span class="icon">⏱️</span>
+                <span id="fsTimer">000</span>
+            </div>
+        </div>
+        <div class="fullscreen-actions">
+            <button class="new-game-btn-fs" id="newGameFs">新游戏</button>
+            <button class="exit-fullscreen-btn" id="exitFullscreen">退出全屏</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <h1>扫雷</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="difficulty">难度:</label>
+                <select id="difficulty">
+                    <option value="easy">简单 (9x9)</option>
+                    <option value="medium">中等 (16x16)</option>
+                    <option value="hard">困难 (16x30)</option>
+                </select>
+            </div>
+            <button id="newGame">新游戏</button>
+            <button id="fullscreenBtn" class="fullscreen-btn">全屏</button>
+            <select id="styleSelect" class="style-select">
+                <option value="nature">🌧️ 自然</option>
+                <option value="tech">⚡ 科技</option>
+                <option value="piano">🎹 钢琴</option>
+                <option value="space">🌌 太空</option>
+                <option value="retro">👾 复古</option>
+            </select>
+            <button id="soundBtn" class="sound-btn"><span class="icon">🔊</span></button>
+            <button id="musicBtn" class="sound-btn muted"><span class="icon">🎵</span></button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">剩余地雷</div>
+                <div class="stat-value mines" id="mineCount">10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">用时</div>
+                <div class="stat-value time" id="timer">000</div>
+            </div>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="instructions">
+            <span>左键: 揭示</span>
+            <span>右键: 标记</span>
+            <span>双击: 快速揭示</span>
+        </div>
+    </div>
+
+    <!-- 结算消息框 -->
+    <div class="message" id="message"></div>
+
+    <script>
+        // 音效风格管理器
+        class SoundManager {
+            constructor() {
+                this.audioContext = null;
+                this.soundEnabled = true;
+                this.musicEnabled = false;
+                this.currentStyle = 'nature';
+                this.musicGain = null;
+                this.musicNodes = [];
+                this.musicInterval = null;
+                this.noiseNode = null;
+            }
+
+            init() {
+                if (this.audioContext) return;
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.musicGain = this.audioContext.createGain();
+                this.musicGain.gain.value = 0.2;
+                this.musicGain.connect(this.audioContext.destination);
+            }
+
+            setStyle(style) {
+                const wasPlaying = this.musicEnabled;
+                if (wasPlaying) {
+                    this.stopMusic();
+                }
+                this.currentStyle = style;
+                if (wasPlaying) {
+                    this.startMusic();
+                }
+            }
+
+            // 播放音效
+            playSound(type) {
+                if (!this.soundEnabled) return;
+                this.init();
+                
+                const ctx = this.audioContext;
+                const now = ctx.currentTime;
+                
+                switch(this.currentStyle) {
+                    case 'nature':
+                        this.playNatureSound(type, now);
+                        break;
+                    case 'tech':
+                        this.playTechSound(type, now);
+                        break;
+                    case 'piano':
+                        this.playPianoSound(type, now);
+                        break;
+                    case 'space':
+                        this.playSpaceSound(type, now);
+                        break;
+                    case 'retro':
+                        this.playRetroSound(type, now);
+                        break;
+                }
+            }
+
+            // ===== 自然风格音效 =====
+            playNatureSound(type, now) {
+                const ctx = this.audioContext;
+                switch(type) {
+                    case 'click':
+                        this.playWaterDrop(now);
+                        break;
+                    case 'reveal':
+                        this.playLeafRustle(now);
+                        break;
+                    case 'flag':
+                        this.playBirdChirp(now);
+                        break;
+                    case 'win':
+                        this.playNatureWin(now);
+                        break;
+                    case 'lose':
+                        this.playThunder(now);
+                        break;
+                }
+            }
+
+            playWaterDrop(now) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+                
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            playLeafRustle(now) {
+                const ctx = this.audioContext;
+                const noise = this.createNoiseBuffer(0.1);
+                const source = ctx.createBufferSource();
+                const filter = ctx.createBiquadFilter();
+                const gain = ctx.createGain();
+                
+                source.buffer = noise;
+                filter.type = 'bandpass';
+                filter.frequency.value = 3000;
+                filter.Q.value = 0.5;
+                
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                
+                source.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+                source.start(now);
+            }
+
+            playBirdChirp(now) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, now);
+                osc.frequency.setValueAtTime(1400, now + 0.05);
+                osc.frequency.setValueAtTime(1100, now + 0.1);
+                osc.frequency.setValueAtTime(1500, now + 0.15);
+                
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+
+            playNatureWin(now) {
+                const ctx = this.audioContext;
+                const notes = [523, 659, 784, 1047];
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    const t = now + i * 0.15;
+                    gain.gain.setValueAtTime(0, t);
+                    gain.gain.linearRampToValueAtTime(0.25, t + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.4);
+                });
+            }
+
+            playThunder(now) {
+                const ctx = this.audioContext;
+                const noise = this.createNoiseBuffer(0.5);
+                const source = ctx.createBufferSource();
+                const filter = ctx.createBiquadFilter();
+                const gain = ctx.createGain();
+                
+                source.buffer = noise;
+                filter.type = 'lowpass';
+                filter.frequency.value = 200;
+                
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                
+                source.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+                source.start(now);
+            }
+
+            // ===== 科技风格音效 =====
+            playTechSound(type, now) {
+                const ctx = this.audioContext;
+                switch(type) {
+                    case 'click':
+                        this.playBeep(now, 880, 0.08);
+                        break;
+                    case 'reveal':
+                        this.playBeep(now, 440, 0.1);
+                        break;
+                    case 'flag':
+                        this.playTechFlag(now);
+                        break;
+                    case 'win':
+                        this.playTechWin(now);
+                        break;
+                    case 'lose':
+                        this.playTechLose(now);
+                        break;
+                }
+            }
+
+            playBeep(now, freq, dur) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'square';
+                osc.frequency.value = freq;
+                
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + dur);
+            }
+
+            playTechFlag(now) {
+                const ctx = this.audioContext;
+                [880, 1100, 1320].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = freq;
+                    const t = now + i * 0.04;
+                    gain.gain.setValueAtTime(0.12, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.05);
+                });
+            }
+
+            playTechWin(now) {
+                const ctx = this.audioContext;
+                const notes = [523, 659, 784, 1047, 1318];
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = freq;
+                    const t = now + i * 0.1;
+                    gain.gain.setValueAtTime(0.15, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.2);
+                });
+            }
+
+            playTechLose(now) {
+                const ctx = this.audioContext;
+                const notes = [400, 300, 200, 100];
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = freq;
+                    const t = now + i * 0.12;
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.2);
+                });
+            }
+
+            // ===== 钢琴风格音效 =====
+            playPianoSound(type, now) {
+                const ctx = this.audioContext;
+                switch(type) {
+                    case 'click':
+                        this.playPianoNote(now, 523, 0.15);
+                        break;
+                    case 'reveal':
+                        this.playPianoNote(now, 392, 0.2);
+                        break;
+                    case 'flag':
+                        this.playPianoNote(now, 659, 0.25);
+                        break;
+                    case 'win':
+                        this.playPianoWin(now);
+                        break;
+                    case 'lose':
+                        this.playPianoLose(now);
+                        break;
+                }
+            }
+
+            playPianoNote(now, freq, dur) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                const filter = ctx.createBiquadFilter();
+                
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                
+                filter.type = 'lowpass';
+                filter.frequency.value = 2000;
+                
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + dur);
+            }
+
+            playPianoWin(now) {
+                const ctx = this.audioContext;
+                const notes = [523, 659, 784, 880, 1047];
+                notes.forEach((freq, i) => {
+                    this.playPianoNote(now + i * 0.2, freq, 0.5);
+                });
+            }
+
+            playPianoLose(now) {
+                const ctx = this.audioContext;
+                const notes = [392, 349, 330, 262];
+                notes.forEach((freq, i) => {
+                    this.playPianoNote(now + i * 0.25, freq, 0.4);
+                });
+            }
+
+            // ===== 太空风格音效 =====
+            playSpaceSound(type, now) {
+                const ctx = this.audioContext;
+                switch(type) {
+                    case 'click':
+                        this.playSpaceClick(now);
+                        break;
+                    case 'reveal':
+                        this.playSpaceReveal(now);
+                        break;
+                    case 'flag':
+                        this.playSpaceFlag(now);
+                        break;
+                    case 'win':
+                        this.playSpaceWin(now);
+                        break;
+                    case 'lose':
+                        this.playSpaceLose(now);
+                        break;
+                }
+            }
+
+            playSpaceClick(now) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+                
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+
+            playSpaceReveal(now) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            playSpaceFlag(now) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(600, now + 0.1);
+                osc.frequency.linearRampToValueAtTime(400, now + 0.2);
+                
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+
+            playSpaceWin(now) {
+                const ctx = this.audioContext;
+                const notes = [261, 329, 392, 523, 659];
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    const t = now + i * 0.25;
+                    gain.gain.setValueAtTime(0, t);
+                    gain.gain.linearRampToValueAtTime(0.2, t + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.6);
+                });
+            }
+
+            playSpaceLose(now) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 1);
+                
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 1);
+            }
+
+            // ===== 复古风格音效 =====
+            playRetroSound(type, now) {
+                const ctx = this.audioContext;
+                switch(type) {
+                    case 'click':
+                        this.playRetroBeep(now, 440, 0.05);
+                        break;
+                    case 'reveal':
+                        this.playRetroBeep(now, 330, 0.08);
+                        break;
+                    case 'flag':
+                        this.playRetroFlag(now);
+                        break;
+                    case 'win':
+                        this.playRetroWin(now);
+                        break;
+                    case 'lose':
+                        this.playRetroLose(now);
+                        break;
+                }
+            }
+
+            playRetroBeep(now, freq, dur) {
+                const ctx = this.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'square';
+                osc.frequency.value = freq;
+                
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.setValueAtTime(0.2, now + dur * 0.8);
+                gain.gain.linearRampToValueAtTime(0, now + dur);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + dur);
+            }
+
+            playRetroFlag(now) {
+                const ctx = this.audioContext;
+                [440, 550, 660].forEach((freq, i) => {
+                    this.playRetroBeep(now + i * 0.06, freq, 0.05);
+                });
+            }
+
+            playRetroWin(now) {
+                const ctx = this.audioContext;
+                const notes = [262, 330, 392, 523, 659, 784];
+                notes.forEach((freq, i) => {
+                    this.playRetroBeep(now + i * 0.1, freq, 0.1);
+                });
+            }
+
+            playRetroLose(now) {
+                const ctx = this.audioContext;
+                const notes = [392, 330, 262, 196];
+                notes.forEach((freq, i) => {
+                    this.playRetroBeep(now + i * 0.15, freq, 0.12);
+                });
+            }
+
+            // ===== 创建白噪声缓冲区 =====
+            createNoiseBuffer(duration) {
+                const ctx = this.audioContext;
+                const sampleRate = ctx.sampleRate;
+                const bufferSize = sampleRate * duration;
+                const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                return buffer;
+            }
+
+            // ===== 背景音乐 =====
+            startMusic() {
+                if (this.musicInterval) return;
+                this.init();
+                
+                this.musicEnabled = true;
+                this.playMusicLoop();
+                this.musicInterval = setInterval(() => this.playMusicLoop(), this.getMusicDuration());
+            }
+
+            getMusicDuration() {
+                switch(this.currentStyle) {
+                    case 'nature': return 6000;
+                    case 'tech': return 4000;
+                    case 'piano': return 8000;
+                    case 'space': return 10000;
+                    case 'retro': return 3000;
+                    default: return 6000;
+                }
+            }
+
+            playMusicLoop() {
+                if (!this.musicEnabled || !this.audioContext) return;
+                
+                switch(this.currentStyle) {
+                    case 'nature':
+                        this.playNatureMusic();
+                        break;
+                    case 'tech':
+                        this.playTechMusic();
+                        break;
+                    case 'piano':
+                        this.playPianoMusic();
+                        break;
+                    case 'space':
+                        this.playSpaceMusic();
+                        break;
+                    case 'retro':
+                        this.playRetroMusic();
+                        break;
+                }
+            }
+
+            // 自然背景音乐 - 下雨声
+            playNatureMusic() {
+                const ctx = this.audioContext;
+                const duration = 6;
+                const noise = this.createNoiseBuffer(duration);
+                const source = ctx.createBufferSource();
+                const filter = ctx.createBiquadFilter();
+                const gain = ctx.createGain();
+                
+                source.buffer = noise;
+                source.loop = false;
+                
+                filter.type = 'bandpass';
+                filter.frequency.value = 1500;
+                filter.Q.value = 0.3;
+                
+                gain.gain.value = 0.08;
+                
+                source.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.musicGain);
+                
+                source.start();
+                this.musicNodes.push(source);
+            }
+
+            // 科技背景音乐 - 电子节拍
+            playTechMusic() {
+                const ctx = this.audioContext;
+                const now = ctx.currentTime;
+                const bpm = 120;
+                const beatDur = 60 / bpm;
+                
+                // 贝斯
+                for (let i = 0; i < 4; i++) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = 55;
+                    
+                    const t = now + i * beatDur;
+                    gain.gain.setValueAtTime(0.1, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + beatDur * 0.8);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.musicGain);
+                    osc.start(t);
+                    osc.stop(t + beatDur);
+                    this.musicNodes.push(osc);
+                }
+                
+                // 高频节拍
+                for (let i = 0; i < 8; i++) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'square';
+                    osc.frequency.value = 880;
+                    
+                    const t = now + i * beatDur / 2;
+                    gain.gain.setValueAtTime(0.05, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.musicGain);
+                    osc.start(t);
+                    osc.stop(t + 0.05);
+                    this.musicNodes.push(osc);
+                }
+            }
+
+            // 钢琴背景音乐 - 柔和和弦
+            playPianoMusic() {
+                const ctx = this.audioContext;
+                const now = ctx.currentTime;
+                
+                const chords = [
+                    [261, 329, 392], // C
+                    [220, 277, 349], // Am
+                    [196, 246, 293], // G
+                    [261, 329, 392], // F (简化)
+                ];
+                
+                chords.forEach((chord, chordIndex) => {
+                    const chordStart = now + chordIndex * 2;
+                    
+                    chord.forEach(freq => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        const filter = ctx.createBiquadFilter();
+                        
+                        osc.type = 'triangle';
+                        osc.frequency.value = freq;
+                        
+                        filter.type = 'lowpass';
+                        filter.frequency.value = 1500;
+                        
+                        gain.gain.setValueAtTime(0, chordStart);
+                        gain.gain.linearRampToValueAtTime(0.1, chordStart + 0.1);
+                        gain.gain.linearRampToValueAtTime(0.08, chordStart + 1.5);
+                        gain.gain.linearRampToValueAtTime(0, chordStart + 2);
+                        
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(this.musicGain);
+                        
+                        osc.start(chordStart);
+                        osc.stop(chordStart + 2);
+                        this.musicNodes.push(osc);
+                    });
+                });
+            }
+
+            // 太空背景音乐 - 氛围音
+            playSpaceMusic() {
+                const ctx = this.audioContext;
+                const now = ctx.currentTime;
+                
+                // 低频氛围
+                const drone = ctx.createOscillator();
+                const droneGain = ctx.createGain();
+                
+                drone.type = 'sine';
+                drone.frequency.value = 65;
+                droneGain.gain.value = 0.1;
+                
+                drone.connect(droneGain);
+                droneGain.connect(this.musicGain);
+                drone.start(now);
+                drone.stop(now + 10);
+                this.musicNodes.push(drone);
+                
+                // 高频闪烁
+                for (let i = 0; i < 5; i++) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.value = 800 + Math.random() * 400;
+                    
+                    const t = now + i * 2 + Math.random();
+                    gain.gain.setValueAtTime(0, t);
+                    gain.gain.linearRampToValueAtTime(0.03, t + 0.5);
+                    gain.gain.linearRampToValueAtTime(0, t + 1.5);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.musicGain);
+                    osc.start(t);
+                    osc.stop(t + 1.5);
+                    this.musicNodes.push(osc);
+                }
+            }
+
+            // 复古背景音乐 - 8位风格
+            playRetroMusic() {
+                const ctx = this.audioContext;
+                const now = ctx.currentTime;
+                
+                const melody = [262, 294, 330, 349, 392, 349, 330, 294];
+                
+                melody.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'square';
+                    osc.frequency.value = freq * 0.5;
+                    
+                    const t = now + i * 0.375;
+                    gain.gain.setValueAtTime(0.08, t);
+                    gain.gain.setValueAtTime(0.08, t + 0.3);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.375);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.musicGain);
+                    osc.start(t);
+                    osc.stop(t + 0.375);
+                    this.musicNodes.push(osc);
+                });
+            }
+
+            stopMusic() {
+                this.musicEnabled = false;
+                if (this.musicInterval) {
+                    clearInterval(this.musicInterval);
+                    this.musicInterval = null;
+                }
+                this.musicNodes.forEach(node => {
+                    try { node.stop(); } catch(e) {}
+                });
+                this.musicNodes = [];
+            }
+
+            toggleSound() {
+                this.soundEnabled = !this.soundEnabled;
+                return this.soundEnabled;
+            }
+
+            toggleMusic() {
+                if (this.musicEnabled) {
+                    this.stopMusic();
+                } else {
+                    this.startMusic();
+                }
+                return this.musicEnabled;
+            }
+        }
+
+        // 扫雷游戏主类
+        class Minesweeper {
+            constructor() {
+                this.difficulties = {
+                    easy: { rows: 9, cols: 9, mines: 10 },
+                    medium: { rows: 16, cols: 16, mines: 40 },
+                    hard: { rows: 16, cols: 30, mines: 99 }
+                };
+                this.MARK_NONE = 0;
+                this.MARK_FLAG = 1;
+                this.MARK_QUESTION = 2;
+                
+                this.board = [];
+                this.revealed = [];
+                this.marks = [];
+                this.gameOver = false;
+                this.gameWon = false;
+                this.firstClick = true;
+                this.timer = 0;
+                this.timerInterval = null;
+                this.isFullscreen = false;
+
+                this.soundManager = new SoundManager();
+
+                this.boardElement = document.getElementById('board');
+                this.mineCountElement = document.getElementById('mineCount');
+                this.timerElement = document.getElementById('timer');
+                this.messageElement = document.getElementById('message');
+                this.difficultySelect = document.getElementById('difficulty');
+                this.newGameButton = document.getElementById('newGame');
+                this.fullscreenBtn = document.getElementById('fullscreenBtn');
+                this.fsMineCount = document.getElementById('fsMineCount');
+                this.fsTimer = document.getElementById('fsTimer');
+                this.exitFullscreenBtn = document.getElementById('exitFullscreen');
+                this.newGameFsBtn = document.getElementById('newGameFs');
+                this.soundBtn = document.getElementById('soundBtn');
+                this.musicBtn = document.getElementById('musicBtn');
+                this.styleSelect = document.getElementById('styleSelect');
+
+                this.init();
+            }
+
+            init() {
+                this.newGameButton.addEventListener('click', () => this.newGame());
+                this.newGameFsBtn.addEventListener('click', () => this.newGame());
+                this.difficultySelect.addEventListener('change', () => this.newGame());
+                this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+                this.exitFullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+
+                this.soundBtn.addEventListener('click', () => {
+                    const enabled = this.soundManager.toggleSound();
+                    this.soundBtn.classList.toggle('muted', !enabled);
+                    this.soundBtn.querySelector('.icon').textContent = enabled ? '🔊' : '🔇';
+                });
+
+                this.musicBtn.addEventListener('click', () => {
+                    const enabled = this.soundManager.toggleMusic();
+                    this.musicBtn.classList.toggle('muted', !enabled);
+                });
+
+                this.styleSelect.addEventListener('change', (e) => {
+                    this.soundManager.setStyle(e.target.value);
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.isFullscreen) {
+                        this.toggleFullscreen();
+                    }
+                });
+
+                this.boardElement.addEventListener('contextmenu', (e) => e.preventDefault());
+
+                this.newGame();
+            }
+
+            toggleFullscreen() {
+                this.isFullscreen = !this.isFullscreen;
+                document.body.classList.toggle('fullscreen', this.isFullscreen);
+                this.fullscreenBtn.textContent = this.isFullscreen ? '退出' : '全屏';
+            }
+
+            newGame() {
+                const difficulty = this.difficulties[this.difficultySelect.value];
+                this.rows = difficulty.rows;
+                this.cols = difficulty.cols;
+                this.totalMines = difficulty.mines;
+                this.flaggedCount = 0;
+                this.gameOver = false;
+                this.gameWon = false;
+                this.firstClick = true;
+                this.timer = 0;
+
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+
+                this.board = [];
+                this.revealed = [];
+                this.marks = [];
+
+                for (let i = 0; i < this.rows; i++) {
+                    this.board[i] = [];
+                    this.revealed[i] = [];
+                    this.marks[i] = [];
+                    for (let j = 0; j < this.cols; j++) {
+                        this.board[i][j] = 0;
+                        this.revealed[i][j] = false;
+                        this.marks[i][j] = this.MARK_NONE;
+                    }
+                }
+
+                this.updateMineCount();
+                this.timerElement.textContent = '000';
+                this.fsTimer.textContent = '000';
+                this.messageElement.className = 'message';
+                this.messageElement.style.display = 'none';
+
+                this.renderBoard();
+            }
+
+            updateMineCount() {
+                const remaining = this.totalMines - this.flaggedCount;
+                this.mineCountElement.textContent = remaining;
+                this.fsMineCount.textContent = remaining;
+            }
+
+            placeMines(excludeRow, excludeCol) {
+                let minesPlaced = 0;
+                const excludeSet = new Set();
+                
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        const r = excludeRow + i;
+                        const c = excludeCol + j;
+                        if (r >= 0 && r < this.rows && c >= 0 && c < this.cols) {
+                            excludeSet.add(`${r},${c}`);
+                        }
+                    }
+                }
+
+                while (minesPlaced < this.totalMines) {
+                    const row = Math.floor(Math.random() * this.rows);
+                    const col = Math.floor(Math.random() * this.cols);
+                    
+                    if (this.board[row][col] !== -1 && !excludeSet.has(`${row},${col}`)) {
+                        this.board[row][col] = -1;
+                        minesPlaced++;
+                    }
+                }
+
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.board[i][j] !== -1) {
+                            this.board[i][j] = this.countAdjacentMines(i, j);
+                        }
+                    }
+                }
+            }
+
+            countAdjacentMines(row, col) {
+                let count = 0;
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        const newRow = row + i;
+                        const newCol = col + j;
+                        if (newRow >= 0 && newRow < this.rows && 
+                            newCol >= 0 && newCol < this.cols && 
+                            this.board[newRow][newCol] === -1) {
+                            count++;
+                        }
+                    }
+                }
+                return count;
+            }
+
+            countAdjacentFlags(row, col) {
+                let count = 0;
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        const newRow = row + i;
+                        const newCol = col + j;
+                        if (newRow >= 0 && newRow < this.rows && 
+                            newCol >= 0 && newCol < this.cols && 
+                            this.marks[newRow][newCol] === this.MARK_FLAG) {
+                            count++;
+                        }
+                    }
+                }
+                return count;
+            }
+
+            getCellPosition(target) {
+                let cell = target;
+                while (cell && !cell.classList.contains('cell')) {
+                    cell = cell.parentElement;
+                }
+                if (!cell || !cell.dataset) return null;
+                return {
+                    row: parseInt(cell.dataset.row),
+                    col: parseInt(cell.dataset.col)
+                };
+            }
+
+            renderBoard() {
+                this.boardElement.innerHTML = '';
+                this.boardElement.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
+
+                const fragment = document.createDocumentFragment();
+                
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell hidden';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+
+                        cell.addEventListener('mousedown', (e) => {
+                            if (e.button === 2) {
+                                e.preventDefault();
+                                this.handleRightClick(e);
+                            }
+                        });
+
+                        cell.addEventListener('click', (e) => this.handleClick(e));
+                        cell.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
+                        
+                        let touchTimer = null;
+                        cell.addEventListener('touchstart', (e) => {
+                            touchTimer = setTimeout(() => {
+                                this.handleRightClick(e);
+                            }, 500);
+                        });
+                        cell.addEventListener('touchend', () => {
+                            if (touchTimer) clearTimeout(touchTimer);
+                        });
+                        cell.addEventListener('touchmove', () => {
+                            if (touchTimer) clearTimeout(touchTimer);
+                        });
+
+                        fragment.appendChild(cell);
+                    }
+                }
+
+                this.boardElement.appendChild(fragment);
+            }
+
+            handleClick(e) {
+                if (this.gameOver) return;
+
+                const pos = this.getCellPosition(e.target);
+                if (!pos) return;
+                const { row, col } = pos;
+
+                if (this.marks[row][col] !== this.MARK_NONE) return;
+
+                this.soundManager.playSound('click');
+
+                if (this.firstClick) {
+                    this.firstClick = false;
+                    this.placeMines(row, col);
+                    this.startTimer();
+                }
+
+                this.reveal(row, col);
+                this.checkWin();
+            }
+
+            handleDoubleClick(e) {
+                if (this.gameOver) return;
+
+                const pos = this.getCellPosition(e.target);
+                if (!pos) return;
+                const { row, col } = pos;
+
+                if (!this.revealed[row][col] || this.board[row][col] <= 0) return;
+
+                const adjacentFlags = this.countAdjacentFlags(row, col);
+                const adjacentMines = this.board[row][col];
+
+                if (adjacentFlags === adjacentMines) {
+                    this.chordReveal(row, col);
+                    this.checkWin();
+                }
+            }
+
+            chordReveal(row, col) {
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        const newRow = row + i;
+                        const newCol = col + j;
+                        if (newRow >= 0 && newRow < this.rows && 
+                            newCol >= 0 && newCol < this.cols && 
+                            !this.revealed[newRow][newCol] && 
+                            this.marks[newRow][newCol] === this.MARK_NONE) {
+                            this.reveal(newRow, newCol);
+                        }
+                    }
+                }
+            }
+
+            handleRightClick(e) {
+                if (this.gameOver) return;
+
+                const pos = this.getCellPosition(e.target);
+                if (!pos) return;
+                const { row, col } = pos;
+
+                if (this.revealed[row][col]) return;
+
+                const oldMark = this.marks[row][col];
+                this.marks[row][col] = (this.marks[row][col] + 1) % 3;
+                
+                if (oldMark === this.MARK_FLAG) {
+                    this.flaggedCount--;
+                }
+                if (this.marks[row][col] === this.MARK_FLAG) {
+                    this.flaggedCount++;
+                    this.soundManager.playSound('flag');
+                }
+                
+                this.updateMineCount();
+                this.updateCell(row, col);
+                
+                // 检查是否所有地雷都被正确标记
+                this.checkAllMinesFlagged();
+            }
+            
+            // 检查是否所有地雷都被正确标记，如果是则自动揭开剩余格子并胜利
+            checkAllMinesFlagged() {
+                if (this.gameOver || this.flaggedCount !== this.totalMines) return;
+                
+                // 检查所有旗帜是否都在真正的地雷位置
+                let allCorrect = true;
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.marks[i][j] === this.MARK_FLAG && this.board[i][j] !== -1) {
+                            allCorrect = false;
+                            break;
+                        }
+                    }
+                    if (!allCorrect) break;
+                }
+                
+                if (allCorrect) {
+                    // 自动揭开所有非地雷格子
+                    this.revealAllNonMines();
+                    // 胜利结算
+                    this.gameOver = true;
+                    this.gameWon = true;
+                    this.endGame(true);
+                }
+            }
+            
+            // 揭开所有非地雷格子
+            revealAllNonMines() {
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.board[i][j] !== -1 && !this.revealed[i][j]) {
+                            this.revealed[i][j] = true;
+                            this.updateCell(i, j);
+                        }
+                    }
+                }
+            }
+
+            reveal(row, col) {
+                if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) return;
+                if (this.revealed[row][col] || this.marks[row][col] === this.MARK_FLAG) return;
+
+                this.revealed[row][col] = true;
+                this.updateCell(row, col);
+
+                if (this.board[row][col] === -1) {
+                    this.gameOver = true;
+                    this.revealAllMines();
+                    this.endGame(false);
+                    return;
+                }
+
+                this.soundManager.playSound('reveal');
+
+                if (this.board[row][col] === 0) {
+                    for (let i = -1; i <= 1; i++) {
+                        for (let j = -1; j <= 1; j++) {
+                            this.reveal(row + i, col + j);
+                        }
+                    }
+                }
+            }
+
+            updateCell(row, col) {
+                const cellIndex = row * this.cols + col;
+                const cell = this.boardElement.children[cellIndex];
+                if (!cell) return;
+
+                if (this.revealed[row][col]) {
+                    cell.className = 'cell revealed';
+                    if (this.board[row][col] === -1) {
+                        cell.classList.add('mine');
+                        cell.innerHTML = '<span class="mine-icon">💣</span>';
+                    } else if (this.board[row][col] > 0) {
+                        cell.textContent = this.board[row][col];
+                        cell.dataset.number = this.board[row][col];
+                    }
+                } else {
+                    cell.className = 'cell hidden';
+                    if (this.marks[row][col] === this.MARK_FLAG) {
+                        cell.classList.add('flagged');
+                        cell.innerHTML = '<span class="flag">🚩</span>';
+                    } else if (this.marks[row][col] === this.MARK_QUESTION) {
+                        cell.classList.add('question');
+                        cell.innerHTML = '<span class="question-mark">?</span>';
+                    } else {
+                        cell.textContent = '';
+                    }
+                }
+            }
+
+            revealAllMines() {
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.board[i][j] === -1) {
+                            this.revealed[i][j] = true;
+                            this.updateCell(i, j);
+                        }
+                    }
+                }
+            }
+
+            checkWin() {
+                let revealedCount = 0;
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.revealed[i][j]) revealedCount++;
+                    }
+                }
+
+                if (revealedCount === this.rows * this.cols - this.totalMines) {
+                    this.gameOver = true;
+                    this.gameWon = true;
+                    this.endGame(true);
+                }
+            }
+
+            startTimer() {
+                this.timerInterval = setInterval(() => {
+                    this.timer++;
+                    const timeStr = String(this.timer).padStart(3, '0');
+                    this.timerElement.textContent = timeStr;
+                    this.fsTimer.textContent = timeStr;
+                }, 1000);
+            }
+
+            endGame(won) {
+                clearInterval(this.timerInterval);
+                this.soundManager.playSound(won ? 'win' : 'lose');
+                
+                const emoji = won ? '🎉' : '💥';
+                const text = won ? '恭喜你赢了！' : '游戏结束！';
+                const diffLabel = this.difficultySelect.options[this.difficultySelect.selectedIndex].text;
+                
+                this.messageElement.innerHTML = `
+                    <span class="emoji">${emoji}</span>
+                    <span class="text">${text}</span>
+                    <span class="stats-info">难度: ${diffLabel} | 用时: ${this.timer}秒</span>
+                    <button onclick="document.getElementById('newGame').click()">再来一局</button>
+                `;
+                this.messageElement.className = `message ${won ? 'win' : 'lose'}`;
+                this.messageElement.style.display = 'flex';
+            }
+        }
+
+        new Minesweeper();
+    </script>
+</body>
+</html>
